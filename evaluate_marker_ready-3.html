@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluate Question — AI Marker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0f0f0f;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;padding:20px;}
+.page{max-width:1100px;margin:0 auto;}
+
+/* KEY SETUP SCREEN */
+#key-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;text-align:center;}
+#key-screen h1{font-size:24px;font-weight:800;margin-bottom:8px;}
+#key-screen p{font-size:14px;color:#555;margin-bottom:24px;max-width:400px;line-height:1.6;}
+.key-input-row{display:flex;gap:8px;width:100%;max-width:480px;}
+#api-key-input{flex:1;background:#141414;border:0.5px solid #333;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;padding:12px 14px;outline:none;transition:border-color 0.15s;}
+#api-key-input:focus{border-color:#3b82f6;}
+#api-key-input::placeholder{color:#333;}
+.key-btn{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px 20px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
+.key-btn:hover{background:#2563eb;}
+.key-note{font-size:11px;color:#333;margin-top:10px;max-width:480px;line-height:1.5;}
+
+/* MAIN APP */
+#app{display:none;}
+.top-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.label{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#555;margin-bottom:4px;}
+.title{font-size:22px;font-weight:800;color:#fff;line-height:1.2;}
+.marks-badge{background:#1a1a1a;border:0.5px solid #333;border-radius:8px;padding:10px 16px;text-align:center;flex-shrink:0;}
+.marks-badge .num{font-size:28px;font-weight:900;color:#fff;}
+.marks-badge .txt{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.08em;}
+.q-box{background:#111827;border:0.5px solid #3b82f6;border-left:3px solid #3b82f6;border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;}
+.q-box .ql{font-size:10px;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.q-box .qt{font-size:16px;font-weight:600;color:#fff;line-height:1.5;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:700px){.cols{grid-template-columns:1fr;}}
+.panel{background:#141414;border:0.5px solid #222;border-radius:12px;padding:16px;height:fit-content;}
+.panel-title{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#555;margin-bottom:12px;}
+.frame-row{border-left:3px solid var(--c);background:#1a1a1a;border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px;}
+.frame-row .fl{font-size:9px;font-weight:600;color:var(--c);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+.frame-row .fs{font-size:12px;color:#aaa;line-height:1.5;}
+.frame-row .fs em{color:#555;font-style:normal;}
+textarea{width:100%;background:#0d0d0d;border:0.5px solid #2a2a2a;border-radius:8px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;padding:14px;resize:vertical;min-height:220px;outline:none;transition:border-color 0.15s;}
+textarea:focus{border-color:#3b82f6;}
+textarea::placeholder{color:#333;}
+.word-count{font-size:11px;color:#444;margin-top:6px;text-align:right;}
+.submit-btn{width:100%;margin-top:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:hover{background:#2563eb;}
+.submit-btn:disabled{background:#1a1a1a;color:#444;cursor:not-allowed;}
+.loading{display:none;text-align:center;padding:20px;color:#555;font-size:13px;}
+.loading.show{display:block;}
+.dot-anim::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
+@keyframes dots{0%,20%{content:'';}40%{content:'.';}60%{content:'..';}80%,100%{content:'...'}}
+.result{display:none;margin-top:16px;}
+.result.show{display:block;}
+.score-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:14px 16px;background:#1a1a1a;border-radius:10px;}
+.score-circle{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;border:2px solid;}
+.score-label{font-size:13px;color:#aaa;line-height:1.5;}
+.score-label strong{color:#fff;display:block;font-size:15px;margin-bottom:2px;}
+.fb-section{margin-bottom:12px;}
+.fb-title{font-size:10px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+.fb-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid #1a1a1a;font-size:13px;line-height:1.5;color:#ccc;}
+.fb-item:last-child{border-bottom:none;}
+.fb-icon{flex-shrink:0;margin-top:1px;}
+.next-step{background:#0d1f0d;border:0.5px solid #22c55e;border-left:3px solid #22c55e;border-radius:0 8px 8px 0;padding:12px 14px;margin-top:12px;font-size:13px;color:#86efac;line-height:1.6;}
+.next-step .nsl{font-size:10px;font-weight:600;color:#22c55e;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+.try-again-btn{width:100%;margin-top:10px;background:transparent;color:#aaa;border:0.5px solid #333;border-radius:8px;padding:10px;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;}
+.try-again-btn:hover{border-color:#555;color:#fff;}
+.error-box{background:#1f0d0d;border:0.5px solid #ef4444;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 14px;margin-top:12px;font-size:13px;color:#fca5a5;line-height:1.6;display:none;}
+</style>
+</head>
+<body>
+
+<!-- KEY SETUP SCREEN — hidden -->
+<div id="key-screen" style="display:none;"></div>
+
+<!-- MAIN APP — shown after key entered -->
+<div id="app" style="display:block;">
+
+  <div class="top-bar">
+    <div class="title-block">
+      <div class="label">iGCSE Biology — Evaluate question</div>
+      <div class="title">Write your answer.<br>Claude will mark it.</div>
+    </div>
+    <div class="marks-badge">
+      <div class="num">6</div>
+      <div class="txt">marks</div>
+    </div>
+  </div>
+
+  <div class="q-box">
+    <div class="ql">Exam question</div>
+    <div class="qt">Evaluate the use of genetic screening to test embryos for inherited diseases before implantation.</div>
+  </div>
+
+  <div class="cols">
+
+    <div class="panel">
+      <div class="panel-title">Writing frame — use this to guide your answer</div>
+      <div class="frame-row" style="--c:#22c55e">
+        <div class="fl">Benefit 1</div>
+        <div class="fs">One benefit of genetic screening is that... <em>→ explain what happens and why it helps</em></div>
+      </div>
+      <div class="frame-row" style="--c:#22c55e">
+        <div class="fl">Benefit 2</div>
+        <div class="fs">A further advantage is that... <em>→ this means that... because...</em></div>
+      </div>
+      <div class="frame-row" style="--c:#ef4444">
+        <div class="fl">Risk / ethical concern 1</div>
+        <div class="fs">However, there are concerns about... <em>→ this could lead to... because...</em></div>
+      </div>
+      <div class="frame-row" style="--c:#ef4444">
+        <div class="fl">Risk / ethical concern 2</div>
+        <div class="fs">Some people also argue that... <em>→ because...</em></div>
+      </div>
+      <div class="frame-row" style="--c:#f59e0b">
+        <div class="fl">Conclusion — where marks are won</div>
+        <div class="fs">On balance, I think genetic screening should / should not be used because... <em>→ say which side is stronger and why — do not just list both sides</em></div>
+      </div>
+      <div style="margin-top:12px;background:#0d0d0d;border-radius:8px;padding:10px 12px;font-size:11px;color:#444;line-height:1.6;">
+        Every sentence needs a <strong style="color:#555">"because"</strong>. No opinions. The conclusion must say which side is stronger and why.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Your answer</div>
+
+      <div id="answer-section">
+        <textarea id="answer" placeholder="Write your full answer here. Aim for 5–8 sentences covering two benefits, two risks or ethical concerns, and a conclusion that makes a judgement..." oninput="updateCount()"></textarea>
+        <div class="word-count" id="wc">0 words</div>
+        <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">
+          <span>▶ Submit for marking</span>
+        </button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+
+      <div class="loading" id="loading">
+        <div style="font-size:24px;margin-bottom:8px;">🔍</div>
+        <div>Marking your answer<span class="dot-anim"></span></div>
+        <div style="font-size:11px;margin-top:4px;color:#333;">Usually takes about 10 seconds</div>
+      </div>
+
+      <div class="result" id="result">
+        <div class="score-row" id="score-row">
+          <div class="score-circle" id="score-circle">?</div>
+          <div class="score-label">
+            <strong id="score-headline">—</strong>
+            <span id="score-sub">—</span>
+          </div>
+        </div>
+        <div class="fb-section">
+          <div class="fb-title">What you did well</div>
+          <div id="fb-good"></div>
+        </div>
+        <div class="fb-section">
+          <div class="fb-title">What's missing or could be stronger</div>
+          <div id="fb-improve"></div>
+        </div>
+        <div class="next-step" id="next-step" style="display:none">
+          <div class="nsl">To gain more marks — add this</div>
+          <div id="next-step-text"></div>
+        </div>
+        <button class="try-again-btn" onclick="tryAgain()">↺ Try again with a new answer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let apiKey = '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';
+
+function activateKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-ant-') && !val.startsWith('sk-')) {
+    alert('That does not look like a valid Anthropic API key. It should start with sk-ant-');
+    return;
+  }
+  apiKey = val;
+  
+  
+}
+
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') activateKey();
+});
+
+function updateCount() {
+  const words = document.getElementById('answer').value.trim().split(/\s+/).filter(w => w.length > 0).length;
+  document.getElementById('wc').textContent = words + ' word' + (words !== 1 ? 's' : '');
+}
+
+async function submitAnswer() {
+  const answer = document.getElementById('answer').value.trim();
+  if (answer.length < 30) {
+    alert('Please write a fuller answer before submitting.');
+    return;
+  }
+
+  document.getElementById('answer-section').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('result').classList.remove('show');
+
+  const prompt = `You are marking an iGCSE Biology evaluate question for a 13-14 year old student in Abu Dhabi.
+
+QUESTION: Evaluate the use of genetic screening to test embryos for inherited diseases before implantation. (6 marks)
+
+MARK SCHEME:
+- Benefit 1 with reasoning: 1-2 marks (e.g. detects inherited conditions before birth, means only healthy embryos implanted, prevents suffering)
+- Benefit 2 with reasoning: 1-2 marks (e.g. reduces long-term healthcare costs, saves money for health systems)
+- Risk or ethical concern 1 with reasoning: 1 mark (e.g. embryos are discarded, raises right to life concerns, embryo cannot consent)
+- Risk or ethical concern 2 with reasoning: 1 mark (e.g. only wealthy families can access it, creates inequality)
+- Conclusion with judgement: 1-2 marks ONLY if it states which side is stronger AND explains why. "There are benefits and risks" = ZERO marks for conclusion. Must use "on balance... because..."
+
+STUDENT ANSWER:
+${answer}
+
+Respond ONLY with valid JSON, no markdown fences, no extra text:
+{
+  "mark": <0-6>,
+  "headline": "<short phrase e.g. Good start, conclusion needs work>",
+  "good": ["<specific thing done well>", "<another>"],
+  "improve": ["<specific thing missing>", "<another>"],
+  "next_step": "<one concrete sentence to add or change — give actual wording if possible>",
+  "show_next_step": <true if mark below 6, false if full marks>
+}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      const fullErr = JSON.stringify(err); throw new Error((err.error?.message || `API error ${response.status}`) + ' | ' + fullErr);
+    }
+
+    const data = await response.json();
+    const text = data.content.map(b => b.text || '').join('').trim();
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    showResult(parsed);
+  } catch(e) {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('answer-section').style.display = 'block';
+    const errBox = document.getElementById('error-box');
+    errBox.style.display = 'block';
+    errBox.textContent = 'Error: ' + (e.message || 'Unknown error') + ' — Check console (F12) for full details.';
+  }
+}
+
+function showResult(r) {
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('result').classList.add('show');
+
+  const mark = r.mark;
+  const circle = document.getElementById('score-circle');
+  circle.textContent = mark + '/6';
+
+  let bg, border;
+  if (mark <= 2) { bg = '#7f1d1d'; border = '#ef4444'; }
+  else if (mark <= 4) { bg = '#78350f'; border = '#f59e0b'; }
+  else { bg = '#14532d'; border = '#22c55e'; }
+  circle.style.background = bg;
+  circle.style.borderColor = border;
+  circle.style.color = '#fff';
+
+  document.getElementById('score-headline').textContent = r.headline;
+  const band = mark <= 2 ? 'Keep building — you have the foundation' :
+               mark <= 4 ? 'Good progress — one more push for full marks' :
+               mark === 5 ? 'Nearly there — one sentence from full marks' :
+               'Excellent — full marks!';
+  document.getElementById('score-sub').textContent = band;
+
+  const goodEl = document.getElementById('fb-good');
+  goodEl.innerHTML = '';
+  (r.good || []).forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'fb-item';
+    d.innerHTML = `<span class="fb-icon" style="color:#22c55e;">✓</span><span>${g}</span>`;
+    goodEl.appendChild(d);
+  });
+
+  const improveEl = document.getElementById('fb-improve');
+  improveEl.innerHTML = '';
+  (r.improve || []).forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'fb-item';
+    d.innerHTML = `<span class="fb-icon" style="color:#f59e0b;">→</span><span>${g}</span>`;
+    improveEl.appendChild(d);
+  });
+
+  const ns = document.getElementById('next-step');
+  if (r.show_next_step && r.next_step) {
+    document.getElementById('next-step-text').textContent = r.next_step;
+    ns.style.display = 'block';
+  } else {
+    ns.style.display = 'none';
+  }
+}
+
+function tryAgain() {
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('answer').value = '';
+  updateCount();
+  document.getElementById('answer-section').style.display = 'block';
+  document.getElementById('answer').focus();
+}
+</script>
+</body>
+</html>
